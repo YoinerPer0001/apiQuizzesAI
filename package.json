@@ -2,9 +2,13 @@
   "name": "apiquizzesia",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/app.ts",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch src/app.ts",
+    "tsc": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node --watch build/app.js"
   },
   "repository": {
     "type": "git",
@@ -18,6 +22,20 @@
   },
   "homepage": "https://github.com/YoinerPer0001/apiQuizzesAI#readme",
   "devDependencies": {
+    "@types/express": "^5.0.3",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.7",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
     "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/dotenv": "^6.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "5.1.0",
+    "firebase-admin": "^13.5.0"
   }
 }
