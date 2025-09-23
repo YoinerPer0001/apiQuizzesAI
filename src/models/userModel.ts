@@ -1,6 +1,5 @@
 import { DataTypes, Model } from "sequelize"
 import { db } from "../core/db.js"
-import type { UserAtributes } from "./IUser.js";
 
 class User extends Model{}
 
@@ -24,7 +23,7 @@ User.init( {
         defaultValue: DataTypes.NOW
     }},
     {
-        modelName: 'User',
+        modelName: 'users',
         sequelize: db,
     }
 )
