@@ -1,4 +1,4 @@
-import User from "../../models/userModel.js";
+import User from "../models/userModel.js";
 
 const dataExclude = ["user_id", "createdAt", "updatedAt", "last_attempt_reset"]
 
@@ -6,13 +6,11 @@ class AuthRepository {
 
     async findUserById(user_id: string) {
         const userInfo = await User.findByPk(user_id, { attributes: { exclude: dataExclude } });
-        console.log(userInfo)
         return userInfo
     }
 
     async createUser(user_id: string) {
         const createdUser = await User.create({ user_id: user_id });
-        console.log(createdUser)
         return createdUser
     }
 

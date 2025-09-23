@@ -1,4 +1,4 @@
-import authRepository from "../repository/auth/authRepository.js";
+import authRepository from "../repository/authRepository.js";
 
 class AuthService {
     async login(user_id: string){

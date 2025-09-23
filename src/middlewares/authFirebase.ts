@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import admin from "../core/firebase.js";
+import { ApiResponse } from "../core/responseSchedule.js";
 
 export async function authenticateFirebase(
     req: Request,
@@ -7,9 +8,9 @@ export async function authenticateFirebase(
     next: NextFunction
 ) {
     const authHeader = req.headers.authorization;
-    console.log(authHeader)
+   
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json(new ApiResponse(401, "Unauthorized", {}));
     }
 
     const idToken = authHeader.split(" ")[1];
@@ -21,7 +22,7 @@ export async function authenticateFirebase(
         next();
     } catch (error) {
         console.error(error);
-        return res.status(401).json({ error: "Invalid token" });
+        return res.status(401).json(new ApiResponse(401, "Invalid Token", {}));
     }
 
 }
