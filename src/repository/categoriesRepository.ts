@@ -1,12 +1,12 @@
-import type { CreationAttributes } from "sequelize";
+import type { CreationAttributes, Transaction } from "sequelize";
 import Categories from "../models/categoriesModel.js";
+import { dataResponseExclude } from "../core/utils/dataExclude.js";
 
-const exludeAttr = ["createdAt","updatedAt"]
 
 class CategoriesRepository {
 
-    async findById(id:string) : Promise<Categories | null> {
-        return await Categories.findByPk(id, {attributes : {exclude: exludeAttr}})
+    async findById(id:string, options?: {transaction?: Transaction | null}) : Promise<Categories | null> {
+        return await Categories.findByPk(id, {transaction: options?.transaction ?? null})
     }
 
     async findByName(name:string) : Promise<Categories | null> {
@@ -14,7 +14,7 @@ class CategoriesRepository {
     }
 
     async getAll() : Promise<Categories[]> {
-        return await Categories.findAll({attributes : {exclude: exludeAttr}})
+        return await Categories.findAll({attributes : {exclude: dataResponseExclude}})
         
     }
 

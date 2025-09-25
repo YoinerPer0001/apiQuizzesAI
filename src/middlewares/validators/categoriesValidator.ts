@@ -19,7 +19,6 @@ export const updateValidator = [
         if (!req.body || Object.keys(req.body).length === 0) {
             throw new Error("At least one parameter must be provided");
         }
-        console.log(Object.keys(req.body).length)
         return true;
     }),
 

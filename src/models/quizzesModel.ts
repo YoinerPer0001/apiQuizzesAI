@@ -31,6 +31,9 @@ Quizzes.init({
     },
     category_id: {
         type: DataTypes.UUID,
+    },
+    resources: {
+        type: DataTypes.ENUM("handwritten", "pdf"),
     }
 },{
     modelName: "quizzes",
