@@ -12,7 +12,7 @@ dotenv.config();
 
 const rootUrl = '/api';
 const app = express();
-const PORT: number = parseInt(process.env.SERVER_PORT ?? "3000") ;
+const PORT: number = parseInt(process.env.PORT ?? "3000") ;
 
 app.use(express.json());
 
