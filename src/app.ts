@@ -27,8 +27,6 @@ app.use(rootUrl, userRoutes)
 app.use(rootUrl, languagesRoutes)
 
 
-
-
 app.listen(PORT, ()=>{
     console.log(`Server running on port ${PORT}`);
 })
