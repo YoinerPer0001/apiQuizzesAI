@@ -41,7 +41,7 @@ export const createQuizValidator = [
 
   body("data.*.question.type")
     .notEmpty().withMessage("Question type is required")
-    .isIn(["mopt", "sopt", "text"]).withMessage("Type must be one of: mopt, sopt, text"),
+    .isIn(["mopt", "tf", "both"]).withMessage("Type must be one of: mopt, tf, both"),
 
   // Validar que answers sea un array
   body("data.*.question.answers")
