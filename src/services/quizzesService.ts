@@ -62,7 +62,7 @@ class QuizzesService {
                         time_limit: question.question.time_limit,
                         type: question.question.type
                     }
-                    console.log(questionSend)
+                
                     //save question
                     const createdQuestion = await questionsRepository.create(questionSend,{transaction})
                     console.log(createdQuestion)
@@ -78,7 +78,7 @@ class QuizzesService {
                         text: answer.text,
                         is_correct: answer.is_correct
                        }
-                       console.log(objectAnswer)
+          
                         const answerSend = await answersRepository.create(objectAnswer, {transaction})
                         if(!answerSend){
                             transaction.rollback()
@@ -98,7 +98,10 @@ class QuizzesService {
                 }
 
                 await transaction.commit()
-                return new ApiResponse(201, "success", { attempts_remaining: remainig_attemps - 1 })
+                return new ApiResponse(201, "success", {
+                    quiz_id: result.dataValues.quiz_id,
+                    attempts_remaining: remainig_attemps - 1 
+                })
 
 
             } else {
