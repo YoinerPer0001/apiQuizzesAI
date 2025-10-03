@@ -10,7 +10,6 @@ class QuizzesController {
 
             const uid = (req as any).uid
             const data = req.body
-            console.log(uid)
 
             const result = await quizzesService.create(uid, data)
 

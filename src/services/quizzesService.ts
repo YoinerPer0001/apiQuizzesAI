@@ -5,6 +5,9 @@ import quizzesRepository from "../repository/quizzesRepository.js";
 import categoriesRepository from "../repository/categoriesRepository.js";
 import userRepository from "../repository/userRepository.js";
 import { db } from "../core/db.js";
+import LanguagesRepository from "../repository/LanguagesRepository.js";
+import answersRepository from "../repository/answersRepository.js";
+import questionsRepository from "../repository/questionsRepository.js";
 
 
 class QuizzesService {
@@ -19,19 +22,70 @@ class QuizzesService {
                 return new ApiResponse(404, "category not found", null)
             }
 
-            data.creator_id = id_user
+            const existLanguage = await LanguagesRepository.getById(data.language_id)
+            if(!existLanguage){
+                return new ApiResponse(404, "language not found", null)
+            }
+
+            const dataQuizz = {
+                creator_id: id_user,
+                title: data.title,
+                language_id: data.language_id,
+                is_public: data.is_public,
+                difficult: data.difficult,
+                category_id: data.category_id,
+                resources: data.resources
+            }
 
             //verify remaining attemps 
             const user = await userRepository.findById(id_user, { transaction })
             const remainig_attemps = user?.dataValues.attempts_remaining
-            
+            console.log(remainig_attemps)
 
             if (remainig_attemps > 0) {
-                const result = await quizzesRepository.create(data, {transaction})
+                const result = await quizzesRepository.create(dataQuizz, {transaction})
+                console.log(result)
 
                 if (!result) {
                     transaction.rollback()
                     return new ApiResponse(500, "Error to create quiz", null)
+                }
+
+                //create question
+                const dataQuestions = data.data
+
+                for (const question of dataQuestions) {
+                    
+                    const questionSend = {
+                        quiz_id: result.dataValues.quiz_id,
+                        text: question.question.text,
+                        time_limit: question.question.time_limit,
+                        type: question.question.type
+                    }
+                    console.log(questionSend)
+                    //save question
+                    const createdQuestion = await questionsRepository.create(questionSend,{transaction})
+                    console.log(createdQuestion)
+                    if(!createdQuestion){
+                        transaction.rollback()
+                        return new ApiResponse(500, "Error to create question", null)
+                    }
+                    //save answers
+                    for(const answer of question.question.answers){
+                       
+                       const objectAnswer = {
+                        question_id: createdQuestion.dataValues.question_id,
+                        text: answer.text,
+                        is_correct: answer.is_correct
+                       }
+                       console.log(objectAnswer)
+                        const answerSend = await answersRepository.create(objectAnswer, {transaction})
+                        if(!answerSend){
+                            transaction.rollback()
+                            return new ApiResponse(500, "Error to create answer", null)
+                        }
+                        
+                    }
                 }
 
                 //subtrac remaining attempts
