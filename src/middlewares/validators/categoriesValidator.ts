@@ -14,6 +14,19 @@ export const createValidator = [
     }
 ]
 
+export const getAllCats = [
+    check('lang')
+        .optional()
+        .isString().withMessage('lang must be a string')
+        .isLength({ min: 2, max: 5 }).withMessage('lang length must be between 2 and 5 characters'),
+
+    (req: Request, res: Response, next: NextFunction) => {
+        validateResult(req, res, next)
+    }
+]
+
+
+
 export const updateValidator = [
     body().custom((value, { req }) => {
         if (!req.body || Object.keys(req.body).length === 0) {

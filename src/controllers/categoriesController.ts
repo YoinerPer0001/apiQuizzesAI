@@ -8,7 +8,8 @@ class CategoriesController {
 
     async getAll(req:Request, res:Response){
         try {
-            const result = await categoriesService.getAll()
+            const codeLang = (req.query.lang as string) || undefined
+            const result = await categoriesService.getAll(codeLang)
             res.status(result.code).json(result)
         } catch (error) {
            res.status(500).json(new ApiResponse(500, (error as Error).message, {})) 
