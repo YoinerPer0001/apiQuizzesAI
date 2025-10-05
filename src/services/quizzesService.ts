@@ -115,6 +115,15 @@ class QuizzesService {
         }
     }
 
+    async getAllQuizzesUsers(id:string, page:number, limit:number): Promise<ApiResponse<{quizzes: Quizzes[]; total: number; totalPages: number} | null>>{
+        try {
+            const result = await quizzesRepository.getQuizzesUser(id, page, limit)
+            return new ApiResponse(200, "success", result)
+        } catch (error) {
+            return new ApiResponse(500, (error as Error).message, null)
+        }
+    }
+
     async getCreatorQuizzes(id:string): Promise<ApiResponse<Quizzes[] | null>>{
         try {
             const result = await quizzesRepository.findByUser(id)
@@ -122,6 +131,20 @@ class QuizzesService {
                 return new ApiResponse(500, "Error to ask", null)
             }
             return new ApiResponse(200, "success", result)
+        } catch (error) {
+            return new ApiResponse(500, (error as Error).message, null)
+        }
+    }
+
+    async getAllPublics(
+        page : number = 1,
+        limit : number = 20,
+        category?: string
+    ) : Promise<ApiResponse<{ quizzes: Quizzes[]; total: number; totalPages: number } | null>> {
+        try {
+            const result = await quizzesRepository.getAllPublics(page, limit, category)
+            return new ApiResponse(200, "success", result)
+            
         } catch (error) {
             return new ApiResponse(500, (error as Error).message, null)
         }

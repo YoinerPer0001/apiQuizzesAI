@@ -58,3 +58,19 @@ export const createQuizValidator = [
     validateResult(req, res, next)
   }
 ]
+
+export const geTAllQuizzesValidator = [
+  param("page")
+    .optional()
+    .isInt({ min: 1 }).withMessage("Total must be an integer greater than 0"),
+  param("limit")
+    .optional()
+    .isInt({ min: 1 }).withMessage("TotalPages must be an integer greater than 0"),
+  param("category")
+    .optional()
+    .isString().withMessage("Category must be a string")
+    .isUUID().withMessage("Category must be a valid UUID"),
+  (req: Request, res: Response, next: NextFunction) => {
+    validateResult(req, res, next)
+  }
+]

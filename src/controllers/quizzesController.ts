@@ -20,6 +20,18 @@ class QuizzesController {
         }
     }
 
+    async getAllQuizzesUser(req: Request, res: Response) {
+        try {
+            const uid = (req as any).uid
+            const page = parseInt(req.query.page as string) || 1
+            const limit = parseInt(req.query.limit as string) || 20
+            const result = await quizzesService.getAllQuizzesUsers(uid, page, limit)
+            res.status(result.code).json(result)
+        } catch (error) {
+            res.status(500).json(new ApiResponse(500, (error as Error).message, {}))
+        }
+    }
+
     async getQuizzesByUser(req: Request, res: Response) {
         try {
             const uid = (req as any).uid
@@ -27,6 +39,20 @@ class QuizzesController {
             res.status(result.code).json(result)
         } catch (error) {
             res.status(500).json(new ApiResponse(500, (error as Error).message, {}))
+        }
+    }
+
+    async getAllPublics(req: Request, res: Response) {
+        try {
+            const category = (req.query.category as string) || undefined
+            const page = parseInt(req.query.page as string) || 1
+            const limit = parseInt(req.query.limit as string) || 20
+
+            const result = await quizzesService.getAllPublics(page, limit, category)
+            res.status(result.code).json(result)
+            
+        } catch (error) {
+             res.status(500).json(new ApiResponse(500, (error as Error).message, {}))
         }
     }
 }
