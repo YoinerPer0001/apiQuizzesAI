@@ -115,9 +115,9 @@ class QuizzesService {
         }
     }
 
-    async getAllQuizzesUsers(id:string, page:number, limit:number): Promise<ApiResponse<{quizzes: Quizzes[]; total: number; totalPages: number} | null>>{
+    async getAllQuizzesUsers(id:string, page:number, limit:number, category?:string): Promise<ApiResponse<{quizzes: Quizzes[]; total: number; totalPages: number} | null>>{
         try {
-            const result = await quizzesRepository.getQuizzesUser(id, page, limit)
+            const result = await quizzesRepository.getQuizzesUser(id, page, limit, category)
             return new ApiResponse(200, "success", result)
         } catch (error) {
             return new ApiResponse(500, (error as Error).message, null)

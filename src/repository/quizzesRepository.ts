@@ -1,6 +1,8 @@
 import { Sequelize, type CreationAttributes, type Transaction } from "sequelize";
 import Quizzes from "../models/quizzesModel.js";
 import User_Quiz_Attempts from "../models/user_quiz_attempModel.js";
+import Languages from "../models/languageModel.js";
+import Categories from "../models/categoriesModel.js";
 
 const exludeAttr = ["createdAt", "updatedAt"]
 
@@ -20,16 +22,24 @@ class QuizzesRepository {
     async getQuizzesUser(
         id:string,
         page : number = 1,
-        limit : number = 20
+        limit : number = 20,
+        category?: string
     ) : Promise<{ quizzes: Quizzes[]; total: number; totalPages: number }> {
         const offset = (page - 1) * limit;
+
+         const whereClause: any = { creator_id: id };
+
+         if (category) {
+                whereClause.category_id = category; // si hay categoría, se agrega
+        }
        
         const {rows: quizzes, count: total} = await Quizzes.findAndCountAll({
-            where: { creator_id: id },
-            attributes: { exclude: exludeAttr },
+            where: whereClause,
+            attributes: { exclude: ['updatedAt', "language_id", "creator_id", "category_id"] },
             limit,
             offset,
-            order: [['createdAt', 'DESC']]
+            order: [['createdAt', 'DESC']],
+            include: [{model: Languages, as: 'language', attributes: ['name'] }, {model: Categories, as: 'category', attributes: ['text'] }],
         })
 
         const totalPages = Math.ceil(total / limit);

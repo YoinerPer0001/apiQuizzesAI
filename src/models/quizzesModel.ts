@@ -48,6 +48,6 @@ Languages.hasMany(Quizzes, {foreignKey: "language_id", as: "language"})
 Quizzes.belongsTo(Languages, {foreignKey: "language_id", as: "language"})
 
 Categories.hasMany(Quizzes, {foreignKey: "category_id", as: "category"})
-Quizzes.belongsTo(Quizzes, {foreignKey: "category_id", as: "category"})
+Quizzes.belongsTo(Categories, {foreignKey: "category_id", as: "category"})
 
 export default Quizzes;
