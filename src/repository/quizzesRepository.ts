@@ -8,6 +8,7 @@ import User_Quiz_Attempts from "../models/user_quiz_attempModel.js";
 import Languages from "../models/languageModel.js";
 import Categories from "../models/categoriesModel.js";
 import User from "../models/userModel.js";
+import Questions from "../models/questionsModel.js";
 
 const exludeAttr = ["createdAt", "updatedAt"];
 
@@ -94,6 +95,13 @@ class QuizzesRepository {
             ),
             "attemptCount",
           ],
+          [
+            Sequelize.literal(`(SELECT COUNT(*)FROM "questions" AS questions WHERE questions."quiz_id" = "quizzes"."quiz_id")`),
+            "questionCount",
+          ],
+          [
+            Sequelize.literal(`(SELECT TRUNC(AVG(time_limit)) FROM "questions" AS attempts WHERE "quiz_id" = "quiz_id")`), "timeQuestion"
+          ]
         ],
       },
       limit,
