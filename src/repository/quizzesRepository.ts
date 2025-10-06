@@ -39,7 +39,7 @@ class QuizzesRepository {
             limit,
             offset,
             order: [['createdAt', 'DESC']],
-            include: [{model: Languages, as: 'language', attributes: ['name'] }, {model: Categories, as: 'category', attributes: ['text'] }],
+            include: [{model: Languages, as: 'language' , attributes : {exclude: exludeAttr} }, {model: Categories, as: 'category' , attributes : {exclude: exludeAttr} }],
         })
 
         const totalPages = Math.ceil(total / limit);
