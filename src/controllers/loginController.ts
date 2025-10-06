@@ -7,7 +7,10 @@ class AuthController {
     public async login(req : Request, res: Response){
         try {
             const user_id = (req as any).uid
-            const response = await authService.login(user_id)
+            const email = (req as any).email
+            const name = (req as any).name
+
+            const response = await authService.login(user_id, email, name)
 
             console.log(response)
 

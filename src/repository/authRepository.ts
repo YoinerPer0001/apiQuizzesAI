@@ -1,3 +1,4 @@
+import type { CreationAttributes } from "sequelize";
 import User from "../models/userModel.js";
 
 const dataExclude = ["user_id", "createdAt", "updatedAt", "last_attempt_reset"]
@@ -9,8 +10,8 @@ class AuthRepository {
         return userInfo
     }
 
-    async createUser(user_id: string) {
-        const createdUser = await User.create({ user_id: user_id });
+    async createUser(data:CreationAttributes<User>) {
+        const createdUser = await User.create(data);
         return createdUser
     }
 

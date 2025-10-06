@@ -25,6 +25,15 @@ User.init({
     rol: {
         type: DataTypes.ENUM("admin", "user"),
         defaultValue: "user"
+    },
+    name: {
+        type: DataTypes.STRING(100),
+        allowNull: false
+    },
+    email:{
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        unique: true,
     }
 },
     {
