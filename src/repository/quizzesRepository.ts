@@ -86,7 +86,7 @@ class QuizzesRepository {
 
     const { rows: quizzes, count: total } = await Quizzes.findAndCountAll({
       attributes: {
-        exclude: exludeAttr,
+        exclude: ["updatedAt", "language_id", "creator_id", "category_id"],
         include: [
           [
             Sequelize.literal(
@@ -111,7 +111,7 @@ class QuizzesRepository {
           as: "category",
           attributes: { exclude: exludeAttr },
         },
-        { model: User, as: "creator", attributes: { exclude: exludeAttr } },
+        { model: User, as: "creator", attributes: ["user_id","name"] },
       ],
     });
 
