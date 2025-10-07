@@ -6,12 +6,29 @@ import quizRoutes from './routes/quizzesRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import dotenv from 'dotenv';
 import languagesRoutes from './routes/languageRoutes.js';
+import { Server } from 'socket.io';
+import { createServer } from 'http';
+import { registerSocketHandlers } from './sockets/config.js';
 
 dotenv.config();
 
 
+
+
 const rootUrl = '/api';
 const app = express();
+
+//socket io configuration
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: '*',
+  }
+});
+
+registerSocketHandlers(io);
+
+
 const PORT: number = parseInt(process.env.PORT ?? "3000") ;
 
 app.use(express.json());
@@ -31,7 +48,8 @@ app.use(rootUrl, userRoutes)
 app.use(rootUrl, languagesRoutes)
 
 
-app.listen(PORT, ()=>{
+httpServer.listen(PORT, ()=>{
+    
     console.log(`Server running on port ${PORT}`);
 })
 

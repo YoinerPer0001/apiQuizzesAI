@@ -124,6 +124,18 @@ class QuizzesService {
         }
     }
 
+    async getById(id:string): Promise<ApiResponse<Quizzes | null>>{
+        try {
+            const result = await quizzesRepository.findById(id)
+            if(!result){
+                return new ApiResponse(404, "quiz not found", null)
+            }   
+            return new ApiResponse(200, "success", result)
+        } catch (error) {
+            return new ApiResponse(500, (error as Error).message, null)
+        }
+    }
+
     async getCreatorQuizzes(id:string): Promise<ApiResponse<Quizzes[] | null>>{
         try {
             const result = await quizzesRepository.findByUser(id)

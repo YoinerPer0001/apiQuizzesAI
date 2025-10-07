@@ -1,5 +1,6 @@
 import type { CreationAttributes, Transaction } from "sequelize";
 import Questions from "../models/questionsModel.js";
+import Answers from "../models/answersModel.js";
 
 class QuestionsRepository {
   async findById(id: string): Promise<Questions | null> {
@@ -8,6 +9,14 @@ class QuestionsRepository {
 
   async getAll(): Promise<Questions[]> {
     return await Questions.findAll();
+  }
+
+  async getAllByQuiz(quizId: string): Promise<Questions[]> {
+    return await Questions.findAll({
+      attributes: {exclude: ["quiz_id", "createdAt", "updatedAt"]},
+      where: { quiz_id: quizId },
+      include:{model: Answers, as: "answers" , attributes: {exclude: ["question_id","createdAt", "updatedAt"]}}
+    });
   }
 
   async create(
