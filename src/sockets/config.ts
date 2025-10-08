@@ -31,6 +31,7 @@ export const registerSocketHandlers = (io: Server) => {
     console.log(`🟢 Cliente conectado: ${socket.id}`);
 
     createRoom(io, socket);
+    JoinRoomSocket(io, socket);
 
     socket.on("disconnect", () => {
       console.log(`🔴 Cliente desconectado: ${socket.id}`);
@@ -55,6 +56,8 @@ function createRoom(io: Server, socket: GameSocket) {
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         const nanoidLetters = customAlphabet(alphabet, 6);
         const roomCode = nanoidLetters();
+
+        console.log("Room code generated:", roomCode);
 
         //fetch questions from database
         const questions = await QuestionService.findQuestionsByQuizId(
@@ -109,3 +112,73 @@ function createRoom(io: Server, socket: GameSocket) {
     }
   });
 }
+
+
+export function JoinRoomSocket(io: Server, socket: GameSocket) {
+    socket.on("join_server", async (data, callback) => {
+
+        try {
+            if (typeof data === 'string') {
+                data = JSON.parse(data)
+            }
+            const userData = await FirebaseTokenVerification(data.token);
+
+            if (userData.data == null) {
+                callback(new ApiResponse(403, "Token error", null));
+                return;
+            }
+
+            const userName = userData.data.name
+            const uid = userData.data.uid
+
+            const player = {
+                id: uid,
+                name: userName,
+                score: 0
+            }
+
+            const room = rooms.get(data.code)
+
+            console.log("Joining room:", data.code, room);
+
+            if (room) {
+                if (room.players.length < 25 && room.state == "pending") {
+
+                    const playerisRegistered = room.players.find(p => p.id === uid)
+
+                    if (playerisRegistered) {
+                        callback(new ApiResponse(401, "Is registered", null));
+                        return;
+                    } else {
+                        room.players.push(player)
+
+                        socket.join(data.code)
+
+                        socket.user_id = data.user_id
+                        socket.room_code = data.code
+
+                        io.to(data.code).emit("new_joined", {
+                            roomCode: data.code,
+                            players: room.players,
+                        })
+
+
+                    }
+
+                } else {
+                     callback(new ApiResponse(409, "Room is full", null));
+                        return;
+                }
+
+            } else {
+                 callback(new ApiResponse(404, "Room not found", null));
+            }
+        } catch (error) {
+            console.error("Error", error)
+            callback(new ApiResponse(500, "server error", null));
+        }
+
+    })
+}
+
+
