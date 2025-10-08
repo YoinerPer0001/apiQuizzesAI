@@ -30,3 +30,22 @@ export async function authenticateFirebase(
     }
 
 }
+
+
+export async function FirebaseTokenVerification(
+    token:string
+) : Promise<ApiResponse<{uid:string, name:string} | null>> {
+    
+
+    try {
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        return new ApiResponse(200, "Token valid", {uid: decodedToken.uid, name: decodedToken.name});
+    
+    } catch (error) {
+        console.error(error);
+        return new ApiResponse(401, "Invalid Token", null);
+    }
+
+}
+
+
