@@ -39,8 +39,16 @@ export const registerSocketHandlers = (io: Server) => {
     CheckQuestion(io, socket);
     StartGame(io, socket);
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       console.log(`🔴 Cliente desconectado: ${socket.id}`);
+
+      const roomCode = socket.data.roomCode;
+      const uid = socket.data.uid;
+      const userName = socket.data.name;
+
+      if (roomCode && uid) {
+        await handlePlayerLeave(io, socket, roomCode, uid, userName);
+      }
     });
   });
 };
@@ -95,9 +103,10 @@ function createRoom(io: Server, socket: GameSocket) {
 
         socket.join(roomCode);
 
-        //save data in socket
-        socket.user_id = userName;
-        socket.room_code = roomCode;
+        // ✅ Guarda los datos del jugador en el socket
+        socket.data.roomCode = roomCode;
+        socket.data.uid = uid;
+        socket.data.name = userName;
 
         const dataSend = {
           roomCode,
@@ -166,8 +175,10 @@ export function JoinRoomSocket(io: Server, socket: GameSocket) {
 
             socket.join(data.code);
 
-            socket.user_id = uid;
-            socket.room_code = data.code;
+            // ✅ Guarda los datos del jugador en el socket
+            socket.data.roomCode = data.code;
+            socket.data.uid = uid;
+            socket.data.name = userName;
 
             io.to(data.code).emit("new_joined", {
               roomCode: data.code,
@@ -197,46 +208,12 @@ export function LeaveRoom(io: Server, socket: GameSocket) {
 
       const { roomCode, token } = data;
       const room = rooms.get(roomCode);
-
       const userData = await FirebaseTokenVerification(token);
-
       const uid = userData.data?.uid ?? "";
       const userName = userData.data?.name ?? "";
 
       if (room && userData.data != null) {
-        room.players = room.players.filter((p) => p.id !== uid);
-
-        // Si la sala queda vacía, puedes eliminarla
-
-        if (uid === room.hostId) {
-          io.to(roomCode).emit("host_leave", {
-            name: userName,
-          });
-
-          console.log("Eliminado host");
-
-          rooms.delete(roomCode);
-        } else {
-          socket.to(roomCode).emit("player_leave", {
-            name: userName,
-            players: room.players,
-          });
-          console.log("Eliminado player");
-        }
-
-        if (room.players.length < 2) {
-          // Notificar a los demás que un jugador se fue
-          console.log("Elimino la sala vacia");
-          io.to(roomCode).emit("insuficient_participants");
-          if (room.state != "pending") {
-            rooms.delete(roomCode);
-          }
-
-          console.log(rooms.size);
-          console.log("NOTIFICO");
-        }
-
-        socket.leave(roomCode); //eliminar usuario del socket
+        await handlePlayerLeave(io, socket, roomCode, uid, userName);
       }
     } catch (error) {
       console.error("Error", error);
@@ -310,11 +287,17 @@ export function CheckQuestion(io: Server, socket: GameSocket) {
         (a: Answers) => a.dataValues.answer_id === data.answer_id
       );
 
-      if (!selectedAnswer) return;
-
       const player = room.players.find((p) => p.id === uid);
       console.log(player);
       if (!player) return;
+
+      if (!selectedAnswer) {
+        callback({
+          isCorrect: false,
+          score: player.score,
+        });
+        return;
+      }
 
       const isCorrect = selectedAnswer.is_correct;
 
@@ -362,4 +345,35 @@ export function StartGame(io: Server, socket: GameSocket) {
       console.error("Error", error);
     }
   });
+}
+
+async function handlePlayerLeave(
+  io: Server,
+  socket: Socket,
+  roomCode: string,
+  uid: string,
+  userName: string
+) {
+  const room = rooms.get(roomCode);
+  if (!room) return;
+
+  room.players = room.players.filter((p) => p.id !== uid);
+
+  if (uid === room.hostId) {
+    io.to(roomCode).emit("host_leave", { name: userName });
+  } else {
+    io.to(roomCode).emit("player_leave", {
+      name: userName,
+      players: room.players,
+    });
+  }
+
+  if (room.players.length < 2) {
+    io.to(roomCode).emit("insuficient_participants");
+    if (room.state !== "pending") {
+      rooms.delete(roomCode);
+    }
+  }
+
+  socket.leave(roomCode);
 }
