@@ -7,6 +7,8 @@ import quizzesService from "../services/quizzesService.js";
 import { ApiResponse } from "../core/responseSchedule.js";
 import usersServices from "../services/usersServices.js";
 import { FirebaseTokenVerification } from "../middlewares/authFirebase.js";
+import type Answers from "../models/answersModel.js";
+import { start } from "repl";
 
 interface Room {
   hostId: string;
@@ -32,6 +34,10 @@ export const registerSocketHandlers = (io: Server) => {
 
     createRoom(io, socket);
     JoinRoomSocket(io, socket);
+    LeaveRoom(io, socket);
+    getQuestionsRooms(io, socket);
+    CheckQuestion(io, socket);
+    StartGame(io, socket);
 
     socket.on("disconnect", () => {
       console.log(`🔴 Cliente desconectado: ${socket.id}`);
@@ -49,9 +55,8 @@ function createRoom(io: Server, socket: GameSocket) {
       const userData = await FirebaseTokenVerification(data.token);
 
       if (userData.data != null) {
-
-        const userName = userData.data.name
-        const uid = userData.data.uid
+        const userName = userData.data.name;
+        const uid = userData.data.uid;
 
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         const nanoidLetters = customAlphabet(alphabet, 6);
@@ -101,7 +106,7 @@ function createRoom(io: Server, socket: GameSocket) {
         };
 
         callback(new ApiResponse(200, "success", dataSend));
-      }else{
+      } else {
         callback(new ApiResponse(403, "Token error", null));
       }
     } catch (error) {
@@ -113,72 +118,248 @@ function createRoom(io: Server, socket: GameSocket) {
   });
 }
 
-
 export function JoinRoomSocket(io: Server, socket: GameSocket) {
-    socket.on("join_server", async (data, callback) => {
+  socket.on("join_server", async (data, callback) => {
+    try {
+      if (typeof data === "string") {
+        data = JSON.parse(data);
+      }
+      const userData = await FirebaseTokenVerification(data.token);
 
-        try {
-            if (typeof data === 'string') {
-                data = JSON.parse(data)
-            }
-            const userData = await FirebaseTokenVerification(data.token);
+      if (userData.data == null) {
+        callback(new ApiResponse(403, "Token error", null));
+        return;
+      }
 
-            if (userData.data == null) {
-                callback(new ApiResponse(403, "Token error", null));
-                return;
-            }
+      const userName = userData.data.name;
+      const uid = userData.data.uid;
 
-            const userName = userData.data.name
-            const uid = userData.data.uid
+      const player = {
+        id: uid,
+        name: userName,
+        score: 0,
+      };
 
-            const player = {
-                id: uid,
-                name: userName,
-                score: 0
-            }
+      const room = rooms.get(data.code);
 
-            const room = rooms.get(data.code)
+      console.log("Joining room:", data.code, room);
 
-            console.log("Joining room:", data.code, room);
+      if (room) {
+        if (room.players.length < 25 && room.state == "pending") {
+          const playerisRegistered = room.players.find((p) => p.id === uid);
 
-            if (room) {
-                if (room.players.length < 25 && room.state == "pending") {
+          const dataSend = {
+            roomCode: data.code,
+            hostId: room.hostId,
+            players: room.players,
+          };
 
-                    const playerisRegistered = room.players.find(p => p.id === uid)
+          if (playerisRegistered) {
+            io.to(data.code).emit("new_joined", {
+              roomCode: data.code,
+              players: room.players,
+            });
 
-                    if (playerisRegistered) {
-                        callback(new ApiResponse(401, "Is registered", null));
-                        return;
-                    } else {
-                        room.players.push(player)
+            callback(new ApiResponse(201, "success", dataSend));
+          } else {
+            room.players.push(player);
 
-                        socket.join(data.code)
+            socket.join(data.code);
 
-                        socket.user_id = data.user_id
-                        socket.room_code = data.code
+            socket.user_id = uid;
+            socket.room_code = data.code;
 
-                        io.to(data.code).emit("new_joined", {
-                            roomCode: data.code,
-                            players: room.players,
-                        })
+            io.to(data.code).emit("new_joined", {
+              roomCode: data.code,
+              players: room.players,
+            });
 
-
-                    }
-
-                } else {
-                     callback(new ApiResponse(409, "Room is full", null));
-                        return;
-                }
-
-            } else {
-                 callback(new ApiResponse(404, "Room not found", null));
-            }
-        } catch (error) {
-            console.error("Error", error)
-            callback(new ApiResponse(500, "server error", null));
+            callback(new ApiResponse(201, "success", dataSend));
+          }
+        } else {
+          callback(new ApiResponse(409, "Room is full", null));
+          return;
         }
-
-    })
+      } else {
+        callback(new ApiResponse(404, "Room not found", null));
+      }
+    } catch (error) {
+      console.error("Error", error);
+      callback(new ApiResponse(500, "server error", null));
+    }
+  });
 }
 
+export function LeaveRoom(io: Server, socket: GameSocket) {
+  socket.on("leave_room", async (data) => {
+    try {
+      if (typeof data === "string") data = JSON.parse(data);
 
+      const { roomCode, token } = data;
+      const room = rooms.get(roomCode);
+
+      const userData = await FirebaseTokenVerification(token);
+
+      const uid = userData.data?.uid ?? "";
+      const userName = userData.data?.name ?? "";
+
+      if (room && userData.data != null) {
+        room.players = room.players.filter((p) => p.id !== uid);
+
+        // Si la sala queda vacía, puedes eliminarla
+
+        if (uid === room.hostId) {
+          io.to(roomCode).emit("host_leave", {
+            name: userName,
+          });
+
+          console.log("Eliminado host");
+
+          rooms.delete(roomCode);
+        } else {
+          socket.to(roomCode).emit("player_leave", {
+            name: userName,
+            players: room.players,
+          });
+          console.log("Eliminado player");
+        }
+
+        if (room.players.length < 2) {
+          // Notificar a los demás que un jugador se fue
+          console.log("Elimino la sala vacia");
+          io.to(roomCode).emit("insuficient_participants");
+          if (room.state != "pending") {
+            rooms.delete(roomCode);
+          }
+
+          console.log(rooms.size);
+          console.log("NOTIFICO");
+        }
+
+        socket.leave(roomCode); //eliminar usuario del socket
+      }
+    } catch (error) {
+      console.error("Error", error);
+    }
+  });
+}
+
+export function getQuestionsRooms(io: Server, socket: GameSocket) {
+  socket.on("get_question", async (data) => {
+    try {
+      if (typeof data === "string") {
+        data = JSON.parse(data);
+      }
+
+      const room = rooms.get(data.code);
+
+      const userData = await FirebaseTokenVerification(data.token);
+
+      if (room && userData.data?.uid == room.hostId) {
+        const index = room.actualQuestionIndex;
+
+        if (index < room.questions.length) {
+          const question = room.questions[index];
+
+          io.to(data.code).emit("actual_question", {
+            hostId: room.hostId,
+            question: question,
+            questionIndex: index + 1,
+            totalQuestions: room.questions.length,
+            totalPlayers: room.players.length,
+            time: room.time,
+          });
+          room.actualQuestionIndex++; // Incrementa solo en esa sala
+        } else {
+          // ✅ Solo 1 vez: respuesta general
+          console.log("finalizo");
+          room.state = "finished";
+          io.to(data.code).emit("game_finished", {
+            players: room.players.map((p) => ({
+              user_id: p.id,
+              user_name: p.name,
+              score: p.score || 0,
+            })),
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error", error);
+    }
+  });
+}
+
+export function CheckQuestion(io: Server, socket: GameSocket) {
+  socket.on("check_question", async (data, callback) => {
+    try {
+      if (typeof data === "string") data = JSON.parse(data);
+      console.log(data);
+      const userData = await FirebaseTokenVerification(data.token);
+      const uid = userData.data?.uid ?? "";
+      const name = userData.data?.name ?? "";
+
+      const room = rooms.get(data.code);
+      if (!room) return;
+
+      const index = room.actualQuestionIndex - 1;
+      const question = room.questions[index];
+
+      console.log(question?.dataValues.answers);
+
+      const selectedAnswer = question?.dataValues.answers.find(
+        (a: Answers) => a.dataValues.answer_id === data.answer_id
+      );
+
+      if (!selectedAnswer) return;
+
+      const player = room.players.find((p) => p.id === uid);
+      console.log(player);
+      if (!player) return;
+
+      const isCorrect = selectedAnswer.is_correct;
+
+      if (isCorrect) {
+        player.score += 400 + Math.trunc(400 * parseFloat(data.percent));
+      }
+
+      console.log(player);
+
+      // ✅ Solo 1 vez: respuesta personal
+      callback({
+        isCorrect,
+        score: player.score,
+      });
+    } catch (error) {
+      console.error("Error", error);
+    }
+  });
+}
+
+export function StartGame(io: Server, socket: GameSocket) {
+  socket.on("start_Game", async (data, callback) => {
+    try {
+      if (typeof data === "string") {
+        data = JSON.parse(data);
+      }
+
+      const userData = await FirebaseTokenVerification(data.token);
+      const uid = userData.data?.uid ?? "";
+      const name = userData.data?.name ?? "";
+
+      const room = rooms.get(data.code);
+
+      if (room && room.hostId == uid) {
+        room.state = "inProgress";
+
+        io.to(data.code).emit("game_Started", {
+          success: true,
+          hostId: room.hostId,
+        });
+      } else {
+        callback(new ApiResponse(403, "Error to start", null));
+      }
+    } catch (error) {
+      console.error("Error", error);
+    }
+  });
+}
