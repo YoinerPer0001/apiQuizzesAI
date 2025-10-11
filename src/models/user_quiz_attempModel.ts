@@ -23,17 +23,6 @@ User_Quiz_Attempts.init({
     },
     score: {
         type: DataTypes.INTEGER,
-    },
-    attempt_number: {
-        type: DataTypes.INTEGER,
-    },
-    started_at: {
-        type: DataTypes.DATE,
-        allowNull: true
-    },
-    finished_at: {
-        type: DataTypes.DATE,
-        allowNull: true
     }
 
 }, {

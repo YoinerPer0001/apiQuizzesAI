@@ -9,15 +9,27 @@ import usersServices from "../services/usersServices.js";
 import { FirebaseTokenVerification } from "../middlewares/authFirebase.js";
 import type Answers from "../models/answersModel.js";
 import { start } from "repl";
+import user_quiz_attemptService from "../services/user_quiz_attemptService.js";
 
 interface Room {
   hostId: string;
+  quiz_id: string;
   type: "public" | "private";
-  players: Array<{ id: string; name: string; score: number }>;
+  players: Player[];
   questions: Array<Questions>;
   actualQuestionIndex: number;
   state: "pending" | "inProgress" | "finished";
   time: number;
+}
+
+interface Player {
+  id: string;
+  name: string;
+  score: number;
+  answers?: Array<{
+    question_id: string;
+    answer_id: string | null;
+  }>;
 }
 
 export interface GameSocket extends Socket {
@@ -70,7 +82,7 @@ function createRoom(io: Server, socket: GameSocket) {
         const nanoidLetters = customAlphabet(alphabet, 6);
         const roomCode = nanoidLetters();
 
-        console.log("Room code generated:", roomCode);
+        
 
         //fetch questions from database
         const questions = await QuestionService.findQuestionsByQuizId(
@@ -89,12 +101,14 @@ function createRoom(io: Server, socket: GameSocket) {
           actualQuestionIndex: 0,
           state: "pending",
           time: time,
+          quiz_id: data.quiz_id,
         };
 
         const player = {
           id: uid,
           name: userName,
           score: 0,
+          answers: [],
         };
 
         room.players.push(player);
@@ -147,11 +161,12 @@ export function JoinRoomSocket(io: Server, socket: GameSocket) {
         id: uid,
         name: userName,
         score: 0,
+        answers: [],
       };
 
       const room = rooms.get(data.code);
 
-      console.log("Joining room:", data.code, room);
+  
 
       if (room) {
         if (room.players.length < 25 && room.state == "pending") {
@@ -232,7 +247,9 @@ export function getQuestionsRooms(io: Server, socket: GameSocket) {
 
       const userData = await FirebaseTokenVerification(data.token);
 
-      if (room && userData.data?.uid == room.hostId) {
+      const uid = userData.data?.uid ?? "";
+
+      if (room && uid == room.hostId) {
         const index = room.actualQuestionIndex;
 
         if (index < room.questions.length) {
@@ -251,10 +268,31 @@ export function getQuestionsRooms(io: Server, socket: GameSocket) {
           // ✅ Solo 1 vez: respuesta general
           console.log("finalizo");
           room.state = "finished";
+
+          for (const p of room.players) {
+            const dataSend = {
+              user_id: p.id,
+              quiz_id: room.quiz_id,
+              score: p.score || 0,
+              answersOptions: (p.answers || []).map((a) => ({
+                question_id: a.question_id,
+                answer_id: a.answer_id,
+              })),
+            };
+        
+            const saveAttempts = await user_quiz_attemptService.create(
+              dataSend
+            );
+
+            if (saveAttempts.code != 201) {
+              console.log("Error saving attempt:", saveAttempts.message);
+            }
+          }
+
           io.to(data.code).emit("game_finished", {
             players: room.players.map((p) => ({
-              user_id: p.id,
-              user_name: p.name,
+              id: p.id,
+              name: p.name,
               score: p.score || 0,
             })),
           });
@@ -270,7 +308,7 @@ export function CheckQuestion(io: Server, socket: GameSocket) {
   socket.on("check_question", async (data, callback) => {
     try {
       if (typeof data === "string") data = JSON.parse(data);
-      console.log(data);
+
       const userData = await FirebaseTokenVerification(data.token);
       const uid = userData.data?.uid ?? "";
       const name = userData.data?.name ?? "";
@@ -281,17 +319,21 @@ export function CheckQuestion(io: Server, socket: GameSocket) {
       const index = room.actualQuestionIndex - 1;
       const question = room.questions[index];
 
-      console.log(question?.dataValues.answers);
-
       const selectedAnswer = question?.dataValues.answers.find(
         (a: Answers) => a.dataValues.answer_id === data.answer_id
       );
 
       const player = room.players.find((p) => p.id === uid);
-      console.log(player);
+
       if (!player) return;
 
       if (!selectedAnswer) {
+        player.answers?.push({
+          answer_id: null,
+          question_id: question?.dataValues.question_id,
+        });
+      
+
         callback({
           isCorrect: false,
           score: player.score,
@@ -299,13 +341,17 @@ export function CheckQuestion(io: Server, socket: GameSocket) {
         return;
       }
 
+      player.answers?.push({
+        answer_id: selectedAnswer.answer_id,
+        question_id: question?.dataValues.question_id,
+      });
+
+
       const isCorrect = selectedAnswer.is_correct;
 
       if (isCorrect) {
         player.score += 400 + Math.trunc(400 * parseFloat(data.percent));
       }
-
-      console.log(player);
 
       // ✅ Solo 1 vez: respuesta personal
       callback({
@@ -377,3 +423,4 @@ async function handlePlayerLeave(
 
   socket.leave(roomCode);
 }
+

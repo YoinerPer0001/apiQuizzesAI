@@ -23,6 +23,7 @@ User_Answers.init({
     },
     answer_id: {
         type: DataTypes.UUID,
+        allowNull: true
     }
 }, {sequelize: db, modelName: "user_answers"})
 
@@ -33,6 +34,6 @@ Questions.hasMany(User_Answers, {foreignKey: "question_id", as: "question"})
 User_Answers.belongsTo(Questions, {foreignKey: "question_id", as: "question"})
 
 Answers.hasMany(User_Answers, {foreignKey :"answer_id", as: "answer"})
-User_Answers.belongsTo(Answers, {foreignKey: "answer_id", as: "answer_id"})
+User_Answers.belongsTo(Answers, {foreignKey: "answer_id", as: "user_answer"})
 
 export default User_Answers;

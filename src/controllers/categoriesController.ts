@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { ApiResponse } from "../core/responseSchedule.js";
 import categoriesService from "../services/categoriesService.js";
 import { body } from "express-validator";
+import user_quiz_attemptService from "../services/user_quiz_attemptService.js";
 
 
 class CategoriesController {
