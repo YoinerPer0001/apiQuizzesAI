@@ -9,6 +9,7 @@ import languagesRoutes from './routes/languageRoutes.js';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import { registerSocketHandlers } from './sockets/config.js';
+import UserQuizAttRoutes from './routes/user_quiz_attemptRoutes.js';
 
 dotenv.config();
 
@@ -46,6 +47,7 @@ app.use(rootUrl, CategoriesRoutes)
 app.use(rootUrl, quizRoutes)
 app.use(rootUrl, userRoutes)
 app.use(rootUrl, languagesRoutes)
+app.use(rootUrl, UserQuizAttRoutes)
 
 
 httpServer.listen(PORT, ()=>{

@@ -20,10 +20,21 @@ class UserQuizAttemptService {
     async getByUserId(user_id:string) : Promise<ApiResponse<User_Quiz_Attempts[] | null>> {
         try {
             const data = await user_quiz_attemptRepository.getByUserId(user_id);
-            return new ApiResponse(200, "User quiz attempts retrieved", data);
+            return new ApiResponse(200, "success", data);
             
         } catch (error) {
             return new ApiResponse(500, "Internal server error", null);
+        }
+    }
+
+    async getByQuizIdUserId(quiz_id:string, user_id:string) : Promise<ApiResponse<User_Quiz_Attempts[] | null>> {
+        try {
+            
+            const data = await user_quiz_attemptRepository.getByQuizIdUserId(quiz_id, user_id);
+            return new ApiResponse(200, "success", data);
+
+        } catch (error) {
+            return new ApiResponse(500, (error as Error).message , null);
         }
     }
 
@@ -55,7 +66,7 @@ class UserQuizAttemptService {
 
             await transaction.commit();
             
-            return new ApiResponse(201, "User quiz attempt created", result);
+            return new ApiResponse(201, "success", result);
             
         } catch (error) {
             return new ApiResponse(500, (error as Error).message, null);

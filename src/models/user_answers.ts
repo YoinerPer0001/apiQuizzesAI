@@ -27,8 +27,8 @@ User_Answers.init({
     }
 }, {sequelize: db, modelName: "user_answers"})
 
-User_Quiz_Attempts.hasMany(User_Answers, {foreignKey: "attempt_id", as: "attempt"})
-User_Answers.belongsTo(User_Quiz_Attempts, {foreignKey: "attempt_id", as: "attempt"})
+User_Quiz_Attempts.hasMany(User_Answers, {foreignKey: "attempt_id", as: "user_answers"})
+User_Answers.belongsTo(User_Quiz_Attempts, {foreignKey: "attempt_id", as: "users"})
 
 Questions.hasMany(User_Answers, {foreignKey: "question_id", as: "question"})
 User_Answers.belongsTo(Questions, {foreignKey: "question_id", as: "question"})

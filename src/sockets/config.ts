@@ -366,6 +366,7 @@ export function CheckQuestion(io: Server, socket: GameSocket) {
 
 export function StartGame(io: Server, socket: GameSocket) {
   socket.on("start_Game", async (data, callback) => {
+    console.log("LLEGO START GAME")
     try {
       if (typeof data === "string") {
         data = JSON.parse(data);
