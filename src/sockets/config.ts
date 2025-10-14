@@ -124,6 +124,7 @@ function createRoom(io: Server, socket: GameSocket) {
 
         const dataSend = {
           roomCode,
+          numberQuestions: room.questions.length,
           hostId: room.hostId,
           players: room.players,
         };
