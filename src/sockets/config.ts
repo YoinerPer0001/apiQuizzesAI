@@ -10,9 +10,11 @@ import { FirebaseTokenVerification } from "../middlewares/authFirebase.js";
 import type Answers from "../models/answersModel.js";
 import { start } from "repl";
 import user_quiz_attemptService from "../services/user_quiz_attemptService.js";
+import userRepository from "../repository/userRepository.js";
 
 interface Room {
   hostId: string;
+  isPremium: Boolean;
   quiz_id: string;
   type: "public" | "private";
   players: Player[];
@@ -73,6 +75,7 @@ function createRoom(io: Server, socket: GameSocket) {
       }
 
       const userData = await FirebaseTokenVerification(data.token);
+      const user = await userRepository.findById(userData.data?.uid ?? "");
 
       if (userData.data != null) {
         const userName = userData.data.name;
@@ -81,8 +84,6 @@ function createRoom(io: Server, socket: GameSocket) {
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         const nanoidLetters = customAlphabet(alphabet, 6);
         const roomCode = nanoidLetters();
-
-        
 
         //fetch questions from database
         const questions = await QuestionService.findQuestionsByQuizId(
@@ -95,6 +96,7 @@ function createRoom(io: Server, socket: GameSocket) {
 
         const room: Room = {
           hostId: uid,
+          isPremium: user?.dataValues.isPremium ?? false,
           type: data.type, // 'public' o 'private'
           players: [],
           questions: questions.data ?? [],
@@ -167,17 +169,52 @@ export function JoinRoomSocket(io: Server, socket: GameSocket) {
 
       const room = rooms.get(data.code);
 
-  
-
       if (room) {
-        if (room.players.length < 25 && room.state == "pending") {
+        const dataSend = {
+          roomCode: data.code,
+          hostId: room.hostId,
+          players: room.players,
+        };
+
+        if (
+          room.isPremium &&
+          room.players.length < 25 &&
+          room.state == "pending"
+        ) {
+          console.log("ENTRO PREMIUM");
           const playerisRegistered = room.players.find((p) => p.id === uid);
 
-          const dataSend = {
-            roomCode: data.code,
-            hostId: room.hostId,
-            players: room.players,
-          };
+          if (playerisRegistered) {
+            io.to(data.code).emit("new_joined", {
+              roomCode: data.code,
+              players: room.players,
+            });
+
+            callback(new ApiResponse(201, "success", dataSend));
+          } else {
+            room.players.push(player);
+
+            socket.join(data.code);
+
+            // ✅ Guarda los datos del jugador en el socket
+            socket.data.roomCode = data.code;
+            socket.data.uid = uid;
+            socket.data.name = userName;
+
+            io.to(data.code).emit("new_joined", {
+              roomCode: data.code,
+              players: room.players,
+            });
+
+            callback(new ApiResponse(201, "success", dataSend));
+          }
+        } else if (
+          !room.isPremium &&
+          room.players.length < 2 &&
+          room.state == "pending"
+        ) {
+          console.log("ENTRO NO PREMIUM");
+          const playerisRegistered = room.players.find((p) => p.id === uid);
 
           if (playerisRegistered) {
             io.to(data.code).emit("new_joined", {
@@ -280,7 +317,7 @@ export function getQuestionsRooms(io: Server, socket: GameSocket) {
                 answer_id: a.answer_id,
               })),
             };
-        
+
             const saveAttempts = await user_quiz_attemptService.create(
               dataSend
             );
@@ -333,7 +370,6 @@ export function CheckQuestion(io: Server, socket: GameSocket) {
           answer_id: null,
           question_id: question?.dataValues.question_id,
         });
-      
 
         callback({
           isCorrect: false,
@@ -346,7 +382,6 @@ export function CheckQuestion(io: Server, socket: GameSocket) {
         answer_id: selectedAnswer.answer_id,
         question_id: question?.dataValues.question_id,
       });
-
 
       const isCorrect = selectedAnswer.is_correct;
 
@@ -367,7 +402,7 @@ export function CheckQuestion(io: Server, socket: GameSocket) {
 
 export function StartGame(io: Server, socket: GameSocket) {
   socket.on("start_Game", async (data, callback) => {
-    console.log("LLEGO START GAME")
+    console.log("LLEGO START GAME");
     try {
       if (typeof data === "string") {
         data = JSON.parse(data);
@@ -386,6 +421,8 @@ export function StartGame(io: Server, socket: GameSocket) {
           success: true,
           hostId: room.hostId,
         });
+
+        console.log("EMITIO GAME STARTED");
       } else {
         callback(new ApiResponse(403, "Error to start", null));
       }
@@ -425,4 +462,3 @@ async function handlePlayerLeave(
 
   socket.leave(roomCode);
 }
-
