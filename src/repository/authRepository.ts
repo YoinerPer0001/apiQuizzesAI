@@ -1,7 +1,7 @@
 import type { CreationAttributes } from "sequelize";
 import User from "../models/userModel.js";
 
-const dataExclude = ["user_id", "createdAt", "updatedAt", "last_attempt_reset"]
+const dataExclude = ["createdAt", "updatedAt", "last_attempt_reset"]
 
 class AuthRepository {
 

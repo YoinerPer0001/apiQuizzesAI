@@ -24,9 +24,12 @@ class UsersService {
         if (!updated) {
           return new ApiResponse(500, "error to update user", null);
         }
+
         user.dataValues.attempts_remaining = 1;
-        user.dataValues.last_attempt_reset = Date.now();
-        return new ApiResponse(200, "success", user);
+        
+        const {last_attempt_reset, ...userWithOutDate} = user.dataValues; 
+        
+        return new ApiResponse(200, "success", userWithOutDate);
       } else {
         return new ApiResponse(200, "success", user);
       }
