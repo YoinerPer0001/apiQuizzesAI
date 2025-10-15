@@ -5,7 +5,7 @@ const excludeInfo = ["createdAt", "updatedAt", "rol"]
 
 class UserRepository {
     async findById(id:string, options?: {transaction:Transaction | null}): Promise<User | null>  {
-        return await User.findByPk(id, {transaction: options?.transaction ?? null, attributes: {exclude: excludeInfo}})
+        return await User.findByPk(id, {transaction: options?.transaction ?? null, attributes: {exclude: ["createdAt", "updatedAt", "rol", "name", "email", "premium_expiration"]}})
     }
 
     async getAll() {

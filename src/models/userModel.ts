@@ -34,6 +34,14 @@ User.init({
         type: DataTypes.STRING(100),
         allowNull: false,
         unique: true,
+    },
+    isPremium:{
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+    premium_expiration:{
+        type: DataTypes.DATE,
+        allowNull: true,
     }
 },
     {
