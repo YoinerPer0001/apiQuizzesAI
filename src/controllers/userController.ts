@@ -31,6 +31,20 @@ class UserController {
              res.status(500).json(new ApiResponse(500, (error as Error).message, {})) 
         }
     }
+
+    async updateUserSubscription(req:Request, res:Response){
+        try {
+            const uid = (req as any).uid
+            const data = req.body
+
+            const result = await usersServices.updateUserSuscription(uid, data)
+
+            res.status(result.code).json(result)
+            
+        } catch (error) {
+             res.status(500).json(new ApiResponse(500, (error as Error).message, {})) 
+        }
+    }
 }
 
 export default new UserController;
