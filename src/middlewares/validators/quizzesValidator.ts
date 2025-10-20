@@ -26,7 +26,7 @@ export const createQuizValidator = [
 
   body("resources")
     .notEmpty().withMessage("Resources is required")
-    .isIn(["handwritten", "pdf"]).withMessage("Resources must be one of: handwritten, pdf"),
+    .isIn(["handwritten", "pdf", "image"]).withMessage("Resources must be one of: handwritten, pdf"),
 
   // Validar que data sea un array
   body("data")

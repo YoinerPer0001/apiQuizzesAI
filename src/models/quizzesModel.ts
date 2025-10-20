@@ -34,7 +34,7 @@ Quizzes.init({
         type: DataTypes.UUID,
     },
     resources: {
-        type: DataTypes.ENUM("handwritten", "pdf"),
+        type: DataTypes.ENUM("handwritten", "pdf", "image"),
     }
 },{
     modelName: "quizzes",
