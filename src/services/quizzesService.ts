@@ -40,7 +40,7 @@ class QuizzesService {
       const user = await userRepository.findById(id_user, { transaction });
       let remainig_attemps = user?.dataValues.attempts_remaining;
 
-      if (remainig_attemps > 0) {
+      if (remainig_attemps > 0 || user?.dataValues.isPremium === true) {
         const result = await quizzesRepository.create(dataQuizz, {
           transaction,
         });
@@ -92,7 +92,7 @@ class QuizzesService {
 
         //subtrac remaining attempts
 
-        if (user?.dataValues.isPremium === false) { //eliminamos uno si es plan free
+        if (user?.dataValues.isPremium === false) { //eliminamos uno solo si es plan free
             remainig_attemps = remainig_attemps - 1;
           const updatedUser = await userRepository.update(
             id_user,
