@@ -128,7 +128,7 @@ function createRoom(io: Server, socket: GameSocket) {
           roomCode,
           numberQuestions: room.questions.length,
           hostId: room.hostId,
-          isPremium = room.isPremium,
+          isPremium: room.isPremium,
           players: room.players,
         };
 
