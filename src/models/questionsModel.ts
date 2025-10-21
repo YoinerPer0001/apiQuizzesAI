@@ -28,7 +28,7 @@ Questions.init({
     }
 }, { sequelize: db, modelName: "questions" })
 
-Quizzes.hasMany(Questions, {foreignKey: "quiz_id", as: "relatedQuizzes"})
+Quizzes.hasMany(Questions, {foreignKey: "quiz_id", as: "list_questions"})
 Questions.belongsTo(Quizzes, {foreignKey: "quiz_id", as: "quiz"})
 
 export default Questions;

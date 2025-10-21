@@ -9,12 +9,20 @@ import Languages from "../models/languageModel.js";
 import Categories from "../models/categoriesModel.js";
 import User from "../models/userModel.js";
 import Questions from "../models/questionsModel.js";
+import Answers from "../models/answersModel.js";
 
 const exludeAttr = ["createdAt", "updatedAt"];
 
 class QuizzesRepository {
   async findById(id: string): Promise<Quizzes | null> {
-    return await Quizzes.findByPk(id, { attributes: { exclude: exludeAttr } });
+    return await Quizzes.findByPk(id, {
+       attributes: { exclude: ["createdAt", "updatedAt", "creator_id", "language_id", "is_public", "difficult", "category_id", "resources"] },
+       include: [{
+        model: Questions, as : "list_questions",
+        attributes: {exclude: ["createdAt", "updatedAt", "quiz_id", "time_limit"]},
+        include: [{model: Answers, as: "answers" , attributes: {exclude: exludeAttr}}]
+      }, {model: User, as: "creator", attributes: {exclude: ["createdAt", "updatedAt", "question_id"]}}]
+       });
   }
 
   async findByUser(

@@ -56,6 +56,18 @@ class QuizzesController {
              res.status(500).json(new ApiResponse(500, (error as Error).message, {}))
         }
     }
+
+    async getQuizzById(req: Request, res: Response){
+         try {
+            const id = (req.query.id as string) || ""
+
+            const result = await quizzesService.getById(id)
+            res.status(result.code).json(result)
+            
+        } catch (error) {
+             res.status(500).json(new ApiResponse(500, (error as Error).message, {}))
+        }
+    }
 }
 
 export default new QuizzesController;

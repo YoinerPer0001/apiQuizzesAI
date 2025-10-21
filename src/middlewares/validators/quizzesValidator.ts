@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express'
-import { body, check, param } from 'express-validator'
+import { body, check, param, query } from 'express-validator'
 import { validateResult } from '../../core/validateResult.js'
 
 export const createQuizValidator = [
@@ -74,3 +74,16 @@ export const geTAllQuizzesValidator = [
     validateResult(req, res, next)
   }
 ]
+
+
+export const getQuizzValidator = [
+  query("id")
+    .exists()
+    .isUUID().withMessage("value must be string uuid type"),
+  (req: Request, res: Response, next: NextFunction) => {
+    validateResult(req, res, next)
+  }
+]
+
+
+
