@@ -21,7 +21,7 @@ class QuizzesRepository {
         model: Questions, as : "list_questions",
         attributes: {exclude: ["createdAt", "updatedAt", "quiz_id", "time_limit"]},
         include: [{model: Answers, as: "answers" , attributes: {exclude: exludeAttr}}]
-      }, {model: User, as: "creator", attributes: {exclude: ["createdAt", "updatedAt", "question_id"]}}]
+      }]
        });
   }
 
